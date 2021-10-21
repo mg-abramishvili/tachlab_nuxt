@@ -4,7 +4,7 @@
             <div class="container">
                 <div class="home-carousel-inner">
                     <h1>Сенсорные киоски <br/>и мониторы</h1>
-                    <button class="btn btn-standard">В каталог</button>
+                    <NuxtLink :to="{name: 'categories'}" class="btn btn-standard">В каталог</NuxtLink>
                 </div>
             </div>
         </div>

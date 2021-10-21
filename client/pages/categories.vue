@@ -1,8 +1,8 @@
 <template>
-    <div class="container">
+    <div class="container mt-4">
         <h1>Каталог</h1>
         <div class="row">
-            <div v-for="category in categories" :key="'category_' + category.id" class="col-12 col-md-4 border mb-4">
+            <div v-for="category in categories" :key="'category_' + category.id" class="col-12 col-md-4">
             <NuxtLink :to="{ name: 'category-id', params: { id: category.id }}">{{ category.name }}</NuxtLink>
             </div>
         </div>

@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div class="container mt-4">
         <h1>{{ product.name }}</h1>
 
         <br/>

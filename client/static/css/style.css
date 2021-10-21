@@ -44,11 +44,23 @@ body {
     border-radius: 0;
     background: #666666;
     border: 0;
-    padding: 12px 16px;
+    padding: 10px 16px;
+    border: 2px solid transparent;
+    color: #fff;
 }
 
 .header-top-search .form-control::placeholder {
     color: #fff;
+}
+
+.header-top-search .form-control:focus {
+    outline: none !important;
+    border-color: #1D88D8;
+    box-shadow: none;
+}
+
+.header-bottom {
+    border-bottom: 1px solid #ddd;
 }
 
 .header-bottom-logo {
