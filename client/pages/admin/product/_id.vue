@@ -44,7 +44,7 @@
                     </div>
                 </div>
 
-                <button @click="updateProduct(product.id)" class="btn btn-standard">Сохранить</button>
+                <button v-if="updateProductButton" @click="updateProduct(product.id)" class="btn btn-standard">Сохранить</button>
             </div>
             <div class="col-12 col-md-4">
                 <file-pond
@@ -58,7 +58,7 @@
                 />
             </div>
         </div>
-
+        <button @click="console()">console</button>
     </div>
 </template>
 
@@ -82,16 +82,10 @@ export default {
     data() {
         return {
             gallery: [],
+
+            updateProductButton: true,
             
             filepond_files: [],
-            filepond_files_edit: [
-                {
-                    source: '1',
-                    options: {
-                        type: 'local',
-                    }
-                }
-            ],
             server: {
                 remove(filename, load) {
                     load('1');
@@ -143,15 +137,19 @@ export default {
     },
     methods: {
         updateProduct(id) {
-            this.gallery = []
             document.getElementsByName("gallery").forEach((galleryItem) => {
-                this.gallery.push(galleryItem.value)
+                if(galleryItem.value) {
+                    this.gallery.push(galleryItem.value)
+                }
             });
-            if(this.name && this.category) {
+            if(this.name && this.price && this.category) {
+                this.updateProductButton = false
                 this.$axios
-                .post(`http://localhost/api/admin/certificate/${id}`, { name: this.name, text: this.text, image: this.image })
+                .post(`http://localhost/api/admin/product/${id}`, { name: this.name, price: this.price, description: this.description, gallery: this.gallery })
                 .then(response => (
-                    this.$router.push({name: 'admin-products'})
+                    //this.$router.push({name: 'admin-products'})
+                    //console.log(response)
+                    this.updateProductButton = true
                 ))
                 .catch((error) => {
                     if(error.response) {
@@ -165,20 +163,34 @@ export default {
                 alert('Заполните поля')
             }
         },
+        console() {
+            console.log(this.filepond_files_edit)
+        }
     },
     async asyncData({ params, $axios }) {
         const product = await $axios.$get(`http://localhost:80/api/admin/product/${params.id}`)
         const categories = await $axios.$get(`http://localhost:80/api/admin/categories`)
         return {
-            product: product,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            meta_title: product.meta_title,
-            meta_description: product.meta_description,
-            meta_keywords: product.meta_keywords,
+            product: product.product,
+            name: product.product.name,
+            description: product.product.description,
+            price: product.product.price,
+            meta_title: product.product.meta_title,
+            meta_description: product.product.meta_description,
+            meta_keywords: product.product.meta_keywords,
             categories: categories,
-            category: product.categories[0].id
+            category: product.product.categories[0].id,
+
+            filepond_files_edit: product.product.media.map(function(element){
+                {
+                    return {
+                        source: 'http://localhost/media/' + element.id + '/' + element.file_name,
+                        options: {
+                            type: 'local',
+                        }
+                    } 
+                }
+            })
         }
     },
     components: {

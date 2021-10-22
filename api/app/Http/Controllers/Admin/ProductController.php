@@ -16,12 +16,36 @@ class ProductController extends Controller
 
     public function product_item($id)
     {
-        return Product::with('categories')->find($id);
+        $product = Product::with('categories')->find($id);
+        return response()->json([
+            'product' => $product,
+            'gallery' => $product->getMedia(),
+        ]);
     }
 
     public function products_by_category($id)
     {
         return Product::whereRelation('categories', 'category_id', $id)->get();
+    }
+
+    public function product_update($id, Request $request) {
+        $data = request()->all();
+        $product = Product::find($id);
+
+        $file1 = request()->input('gallery');
+        for ($i = 0; $i < count($file1); $i++) {
+            $file = $file1[$i];
+            if(TemporaryFile::where('folder', $file)->first()) {
+                $temp_file = TemporaryFile::where('folder', $file)->first();
+                $url = public_path() . '/temp_uploads/' . $temp_file->folder . '/' . $temp_file->filename;
+                $product->addMedia($url)->toMediaCollection();
+                unlink($url);
+                rmdir(public_path('temp_uploads/' . $temp_file->folder));
+                $temp_file->delete();
+            }
+        }
+
+        $product->save();
     }
 
     public function add_image_store(Request $request) {
