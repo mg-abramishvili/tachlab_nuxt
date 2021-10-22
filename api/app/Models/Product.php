@@ -4,13 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Product extends Model implements HasMedia
+class Product extends Model
 {
     use HasFactory;
-    use InteractsWithMedia;
 
     protected $fillable = [
         'name',
@@ -18,9 +15,10 @@ class Product extends Model implements HasMedia
         'description',
         'resolution',
         'diagonal',
+        'gallery',
     ];
 
-    //protected $casts=['gallery'=>'json'];
+    protected $casts=['gallery'=>'json'];
 
     public function categories()
     {

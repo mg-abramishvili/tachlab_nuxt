@@ -48,17 +48,17 @@
             </div>
             <div class="col-12 col-md-4">
                 <file-pond
-                    name="gallery"
+                    name="gallery[]"
                     ref="gallery"
                     label-idle="Выбрать картинки..."
                     v-bind:allow-multiple="true"
+                    v-bind:allow-reorder="true"
                     accepted-file-types="image/jpeg, image/png"
                     :server="server"
                     v-bind:files="filepond_files_edit"
                 />
             </div>
         </div>
-        <button @click="console()">console</button>
     </div>
 </template>
 
@@ -90,18 +90,19 @@ export default {
                 remove(filename, load) {
                     load('1');
                 },
-                process(fieldName, file, metadata, load, error, progress, abort, transfer, options) {
+                process: (fieldName, file, metadata, load, error, progress, abort, transfer, options) => {
                     const formData = new FormData();
                     formData.append(fieldName, file, file.name);
                     const request = new XMLHttpRequest();
-                    request.open('POST', 'http://localhost/api/admin/products/add_image_upload');
+                    request.open('POST', 'http://localhost/api/admin/products/file/upload');
                     request.upload.onprogress = (e) => {
                         progress(e.lengthComputable, e.loaded, e.total);
                     };
-                    request.onload = function () {
+                    request.onload = function() {
                         if (request.status >= 200 && request.status < 300) {
                             load(request.responseText);
-                        } else {
+                        }
+                        else {
                             error('oh no');
                         }
                     };
@@ -110,11 +111,14 @@ export default {
                         abort: () => {
                             request.abort();
                             abort();
-                        },
+                        }
                     };
                 },
-                load(source, load, error, progress, abort, headers) {
-                    var myRequest = new Request(source);
+                revert: (filename, load) => {
+                    load(filename)
+                },
+                load: (source, load, error, progress, abort, headers) => {
+                    var myRequest = new Request('http://localhost' + source);
                     fetch(myRequest).then(function(response) {
                         response.blob().then(function(myBlob) {
                             load(myBlob)
@@ -137,18 +141,21 @@ export default {
     },
     methods: {
         updateProduct(id) {
-            document.getElementsByName("gallery").forEach((galleryItem) => {
+            this.updateProductButton = false
+            this.gallery = []
+            document.getElementsByName("gallery[]").forEach((galleryItem) => {
                 if(galleryItem.value) {
                     this.gallery.push(galleryItem.value)
                 }
             });
+            console.log(this.gallery)
             if(this.name && this.price && this.category) {
                 this.updateProductButton = false
                 this.$axios
                 .post(`http://localhost/api/admin/product/${id}`, { name: this.name, price: this.price, description: this.description, gallery: this.gallery })
                 .then(response => (
-                    //this.$router.push({name: 'admin-products'})
                     //console.log(response)
+                    this.$router.push({name: 'admin-products'}),
                     this.updateProductButton = true
                 ))
                 .catch((error) => {
@@ -162,29 +169,26 @@ export default {
             } else {
                 alert('Заполните поля')
             }
-        },
-        console() {
-            console.log(this.filepond_files_edit)
         }
     },
     async asyncData({ params, $axios }) {
         const product = await $axios.$get(`http://localhost:80/api/admin/product/${params.id}`)
         const categories = await $axios.$get(`http://localhost:80/api/admin/categories`)
         return {
-            product: product.product,
-            name: product.product.name,
-            description: product.product.description,
-            price: product.product.price,
-            meta_title: product.product.meta_title,
-            meta_description: product.product.meta_description,
-            meta_keywords: product.product.meta_keywords,
+            product: product,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            meta_title: product.meta_title,
+            meta_description: product.meta_description,
+            meta_keywords: product.meta_keywords,
             categories: categories,
-            category: product.product.categories[0].id,
+            category: product.categories[0].id,
 
-            filepond_files_edit: product.product.media.map(function(element){
+            filepond_files_edit: product.gallery.map(function(element){
                 {
                     return {
-                        source: 'http://localhost/media/' + element.id + '/' + element.file_name,
+                        source: element,
                         options: {
                             type: 'local',
                         }

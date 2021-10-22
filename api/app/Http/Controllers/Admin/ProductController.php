@@ -16,11 +16,7 @@ class ProductController extends Controller
 
     public function product_item($id)
     {
-        $product = Product::with('categories')->find($id);
-        return response()->json([
-            'product' => $product,
-            'gallery' => $product->getMedia(),
-        ]);
+        return Product::with('categories')->find($id);
     }
 
     public function products_by_category($id)
@@ -28,45 +24,47 @@ class ProductController extends Controller
         return Product::whereRelation('categories', 'category_id', $id)->get();
     }
 
+    public function file($type)
+    {
+        switch ($type) {
+            case 'upload':
+                return $this->upload();
+        }
+
+        return \Response::make('success', 200, [
+            'Content-Disposition' => 'inline',
+        ]);
+    }
+
+    public function upload()
+    {
+        if (request()->file('gallery')) {
+            $file1 = request()->file('gallery');
+            for ($i = 0; $i < count($file1); $i++) {
+                $file = $file1[$i];
+                $filename = md5(time() . rand(1, 100000)) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path() . '/uploads', $filename);
+
+                return \Response::make('/uploads/' . $filename, 200, [
+                    'Content-Disposition' => 'inline',
+                ]);
+            }
+        }
+    }
+
     public function product_update($id, Request $request) {
         $data = request()->all();
         $product = Product::find($id);
 
-        $file1 = request()->input('gallery');
-        for ($i = 0; $i < count($file1); $i++) {
-            $file = $file1[$i];
-            if(TemporaryFile::where('folder', $file)->first()) {
-                $temp_file = TemporaryFile::where('folder', $file)->first();
-                $url = public_path() . '/temp_uploads/' . $temp_file->folder . '/' . $temp_file->filename;
-                $product->addMedia($url)->toMediaCollection();
-                unlink($url);
-                rmdir(public_path('temp_uploads/' . $temp_file->folder));
-                $temp_file->delete();
-            }
+        $product->name = $data['name'];
+        $product->price = $data['price'];
+        $product->description = $data['description'];
+
+        if (!isset($data['gallery'])) {
+            $data['gallery'] = [];
         }
+        $product->gallery = $data['gallery'];
 
         $product->save();
-    }
-
-    public function add_image_store(Request $request) {
-        if($request->hasFile('gallery')) {
-
-            if($request->hasFile('gallery')) {
-                $file = $request->file('gallery');
-            }
-
-            $filename = $file->getClientOriginalName();
-            $folder = uniqid() . '-' . now()->timestamp;
-            $file->move(public_path() . '/temp_uploads/' . $folder, $filename);
-
-            TemporaryFile::create([
-                'folder' => $folder,
-                'filename' => $filename
-            ]);
-
-            return $folder;
-        }
-
-        return '';
     }
 }
